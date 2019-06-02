@@ -25,11 +25,6 @@
 import AVFoundation
 import MediaPlayer
 
-private protocol AudioPlayerProtocol: AVAudioPlayerDelegate
-{
-    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
-}
-
 /// A set of methods implemented by the delegate of a audio player to handle remote control event.
 /// The methods of this protocol are all optional.
 @objc public protocol ColiseuPlayerDelegate: class
@@ -120,6 +115,21 @@ public enum ColiseuPlayerRepeat: Int
     case all
 }
 
+/// An audio player engine, to make it mockable by test
+internal class ColiseuPlayerEngine
+{
+    func initAudioPlayer(url: URL) -> AVAudioPlayer?
+    {
+        do {
+            return try AVAudioPlayer(contentsOf: url)
+        }
+        catch let error {
+            print("AVAudioPlayer error occurred:\n \(error)")
+        }
+        return nil
+    }
+}
+
 /// An audio player that provides playback of audio data from a file or memory.
 public class ColiseuPlayer: NSObject
 {
@@ -127,6 +137,7 @@ public class ColiseuPlayer: NSObject
 
     public typealias function = () -> ()
 
+    internal var engine: ColiseuPlayerEngine
     internal var audioPlayer: AVAudioPlayer?
     internal var timer: Timer!
 
@@ -201,6 +212,7 @@ public class ColiseuPlayer: NSObject
     public override init()
     {
         // Inherited
+        self.engine = ColiseuPlayerEngine()
         super.init()
         UIApplication.shared.beginReceivingRemoteControlEvents()
     }
@@ -283,10 +295,11 @@ public class ColiseuPlayer: NSObject
         MPNowPlayingInfoCenter.default().nowPlayingInfo = songInfo
     }
 
-    private func prepareAudio(_ index: Int)
+    private func prepareAudio(_ index: Int) -> Bool
     {
-        guard let songs = self.songsList, (index >= 0 && index < songs.count) else { return }
+        guard let songs = self.songsList, (index >= 0 && index < songs.count) else { return false }
         prepareAudio(songs[index], index)
+        return true
     }
 
     private func prepareAudio(_ song: AudioFile, _ index: Int)
@@ -301,13 +314,8 @@ public class ColiseuPlayer: NSObject
             return
         }
 
-        do {
-            if let path = song.path {
-                self.audioPlayer = try AVAudioPlayer(contentsOf: path)
-            }
-        }
-        catch let error {
-            print("AVAudioPlayer error occurred:\n \(error)")
+        if let path = song.path {
+            self.audioPlayer = self.engine.initAudioPlayer(url: path)
         }
         self.audioPlayer!.delegate = self
         self.audioPlayer!.prepareToPlay()
@@ -346,9 +354,10 @@ public class ColiseuPlayer: NSObject
             self.songsList?.shuffle()
         }
         // Prepare core audio
-        prepareAudio(index)
-        // Play current song
-        playSong()
+        if prepareAudio(index) {
+            // Play current song
+            playSong()
+        }
     }
 
     /// Plays sound asynchronously from song list.
@@ -361,9 +370,10 @@ public class ColiseuPlayer: NSObject
             return
         }
         // Prepare core audio
-        prepareAudio(index)
-        // Play current song
-        playSong()
+        if prepareAudio(index) {
+            // Play current song
+            playSong()
+        }
     }
 
     /// Pauses playback; sound remains ready to resume playback from where it left off.
@@ -465,9 +475,9 @@ public class ColiseuPlayer: NSObject
     }
 }
 
-// MARK: - AudioPlayerProtocol
+// MARK: - AVAudioPlayerDelegate
 
-extension ColiseuPlayer: AudioPlayerProtocol
+extension ColiseuPlayer: AVAudioPlayerDelegate
 {
     public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
     {
