@@ -115,10 +115,10 @@ public enum ColiseuPlayerRepeat: Int
     case all
 }
 
-/// An audio player engine, to make it mockable by test
-internal class ColiseuPlayerEngine
+/// An audio player builder, to make it mockable by test
+internal class AudioPlayerBuilder
 {
-    func initAudioPlayer(url: URL) -> AVAudioPlayer?
+    func createAudioPlayer(contentsOf url: URL) -> AVAudioPlayer?
     {
         do {
             return try AVAudioPlayer(contentsOf: url)
@@ -130,6 +130,12 @@ internal class ColiseuPlayerEngine
     }
 }
 
+/// An audio player protocol that listen to audio player delegate
+private protocol AudioPlayerProtocol: AVAudioPlayerDelegate
+{
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
+}
+
 /// An audio player that provides playback of audio data from a file or memory.
 public class ColiseuPlayer: NSObject
 {
@@ -137,7 +143,7 @@ public class ColiseuPlayer: NSObject
 
     public typealias function = () -> ()
 
-    internal var engine: ColiseuPlayerEngine
+    internal var builder: AudioPlayerBuilder
     internal var audioPlayer: AVAudioPlayer?
     internal var timer: Timer!
 
@@ -212,7 +218,7 @@ public class ColiseuPlayer: NSObject
     public override init()
     {
         // Inherited
-        self.engine = ColiseuPlayerEngine()
+        self.builder = AudioPlayerBuilder()
         super.init()
         UIApplication.shared.beginReceivingRemoteControlEvents()
     }
@@ -315,7 +321,7 @@ public class ColiseuPlayer: NSObject
         }
 
         if let path = song.path {
-            self.audioPlayer = self.engine.initAudioPlayer(url: path)
+            self.audioPlayer = self.builder.createAudioPlayer(contentsOf: path)
         }
         self.audioPlayer!.delegate = self
         self.audioPlayer!.prepareToPlay()
@@ -475,9 +481,9 @@ public class ColiseuPlayer: NSObject
     }
 }
 
-// MARK: - AVAudioPlayerDelegate
+// MARK: - AudioPlayerProtocol
 
-extension ColiseuPlayer: AVAudioPlayerDelegate
+extension ColiseuPlayer: AudioPlayerProtocol
 {
     public func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool)
     {
