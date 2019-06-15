@@ -190,6 +190,7 @@ public class ColiseuPlayer: NSObject {
     public var playerDidPause: function?
     public var playerDidStop: function?
     private var playerWillRepeat: Bool?
+    private var playerObserveInterruption: Bool?
 
     // MARK: DataSource
 
@@ -351,12 +352,15 @@ public class ColiseuPlayer: NSObject {
     // MARK: - Observers
 
     private func addInterruptionObserver() {
-        removeInterruptionObserver()
-        NotificationCenter.default.addObserver(self, selector: #selector(self.handleInterruption), name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
+        if self.playerObserveInterruption != true {
+            NotificationCenter.default.addObserver(self, selector: #selector(self.handleInterruption), name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
+            self.playerObserveInterruption = true
+        }
     }
 
     private func removeInterruptionObserver() {
         NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
+        self.playerObserveInterruption = false
     }
 
     @objc private func handleInterruption(notification: NSNotification) {
