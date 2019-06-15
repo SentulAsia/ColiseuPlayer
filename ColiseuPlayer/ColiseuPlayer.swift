@@ -156,7 +156,7 @@ internal class AudioPlayerBuilder {
         do {
             return try AVAudioPlayer(contentsOf: url)
         } catch {
-            print("AVAudioPlayer error occurred:\n \(error)")
+            print(error.localizedDescription)
         }
         return nil
     }
@@ -268,8 +268,9 @@ public class ColiseuPlayer: NSObject {
             }
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            print("AVAudioSession error occurred:\n\(error)")
+            print(error.localizedDescription)
         }
+        addInterruptionObserver()
     }
 
     /// Deactivates your app’s audio session.
@@ -282,8 +283,9 @@ public class ColiseuPlayer: NSObject {
             }
             try AVAudioSession.sharedInstance().setActive(false)
         } catch {
-            print("AVAudioSession error occurred:\n\(error)")
+            print(error.localizedDescription)
         }
+        removeInterruptionObserver()
     }
 
     internal func remoteControlInfo(_ song: AudioFile) {
@@ -344,6 +346,43 @@ public class ColiseuPlayer: NSObject {
 
         // ?
         song.duration = self.audioPlayer!.duration
+    }
+
+    // MARK: - Observers
+
+    private func addInterruptionObserver() {
+        NotificationCenter.default.addObserver(self, selector: #selector(self.handleInterruption), name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
+    }
+
+    private func removeInterruptionObserver() {
+        NotificationCenter.default.removeObserver(self, name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
+    }
+
+    @objc private func handleInterruption(notification: NSNotification) {
+        guard let value = (notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? NSNumber)?.uintValue,
+            let interruptionType =  AVAudioSession.InterruptionType(rawValue: value)
+            else { return }
+        switch interruptionType {
+        case .began:
+            do {
+                pauseSong()
+                self.delegate?.audioPlayerDidReceiveRemoteControlPauseEvent(self)
+                try AVAudioSession.sharedInstance().setActive(false)
+            } catch {
+                print(error.localizedDescription)
+            }
+
+        default :
+            if let optionValue = (notification.userInfo?[AVAudioSessionInterruptionOptionKey] as? NSNumber)?.uintValue, AVAudioSession.InterruptionOptions(rawValue: optionValue) == .shouldResume {
+                do {
+                    try AVAudioSession.sharedInstance().setActive(true)
+                    playSong()
+                    self.delegate?.audioPlayerDidReceiveRemoteControlPlayEvent(self)
+                } catch {
+                    print(error.localizedDescription)
+                }
+            }
+        }
     }
 
     // MARK: - Commands
