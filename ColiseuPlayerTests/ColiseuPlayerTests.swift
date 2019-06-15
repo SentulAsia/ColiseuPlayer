@@ -18,7 +18,6 @@ class ColiseuPlayerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
         self.sut = ColiseuPlayer()
         self.sut.builder = AudioPlayerBuilderMock()
         self.delegatorSpy = DelegatorSpy()
@@ -38,7 +37,6 @@ class ColiseuPlayerTests: XCTestCase {
     }
 
     override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
         self.sut.stopSong()
         self.sut.stopSession()
@@ -417,19 +415,16 @@ class ColiseuPlayerTests: XCTestCase {
 }
 
 extension ColiseuPlayerTests {
+
     class AudioPlayerBuilderMock: AudioPlayerBuilder {
+
         override func createAudioPlayer(contentsOf url: URL) -> AVAudioPlayer? {
-            do {
-                return try AVAudioPlayerMock(contentsOf: url)
-            }
-            catch let error {
-                print("AVAudioPlayer error occurred:\n \(error)")
-            }
-            return nil
+            return try! AVAudioPlayerMock(contentsOf: url)
         }
     }
 
     class AVAudioPlayerMock: AVAudioPlayer {
+
         private var isPlayingMock: Bool = false
 
         override var isPlaying: Bool {
@@ -455,55 +450,65 @@ extension ColiseuPlayerTests {
 }
 
 extension ColiseuPlayerTests {
+
     class UIEventRemoteControlStub: UIEvent {
+
         override var type: UIEvent.EventType {
             return UIEvent.EventType.remoteControl
         }
     }
 
     class UIEventPlayStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlPlay
         }
     }
 
     class UIEventPauseStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlPause
         }
     }
 
     class UIEventPreviousTrackStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlPreviousTrack
         }
     }
 
     class UIEventNextTrackStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlNextTrack
         }
     }
 
     class UIEventBeginSeekingBackwardStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlBeginSeekingBackward
         }
     }
 
     class UIEventEndSeekingBackwardStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlEndSeekingBackward
         }
     }
 
     class UIEventBeginSeekingForwardStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlBeginSeekingForward
         }
     }
 
     class UIEventEndSeekingForwardStub: UIEventRemoteControlStub {
+
         override var subtype: UIEvent.EventSubtype {
             return UIEvent.EventSubtype.remoteControlEndSeekingForward
         }
@@ -511,6 +516,7 @@ extension ColiseuPlayerTests {
 }
 
 extension ColiseuPlayerTests: ColiseuPlayerDataSource {
+
     func audioRepeatType(in player: ColiseuPlayer) -> ColiseuPlayerRepeat {
         return .none
     }
@@ -521,7 +527,9 @@ extension ColiseuPlayerTests: ColiseuPlayerDataSource {
 }
 
 extension ColiseuPlayerTests {
+
     class DelegatorSpy: ColiseuPlayerDelegate {
+
         var audioPlayerDidReceiveRemoteControlPlayEventCalled = false
         func audioPlayerDidReceiveRemoteControlPlayEvent(_ player: ColiseuPlayer) {
             self.audioPlayerDidReceiveRemoteControlPlayEventCalled = true

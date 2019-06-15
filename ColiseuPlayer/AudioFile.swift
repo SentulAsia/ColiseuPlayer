@@ -25,8 +25,8 @@
 import AVFoundation
 import MediaPlayer
 
-public class AudioFile
-{
+public class AudioFile {
+
     public let title: String
     public let fileName: String
     public var fileSize: Int = 0
@@ -36,22 +36,19 @@ public class AudioFile
     public var artwork: UIImage?
     public var index: Int = 0
 
-    required public init(_ title: String, _ fileName: String)
-    {
+    required public init(_ title: String, _ fileName: String) {
         self.title = title
         self.fileName = fileName
     }
 
-    convenience public init(url: URL)
-    {
+    convenience public init(url: URL) {
         let fileAsset = AVURLAsset(url: url, options: nil)
         var title: String = "Song"
         var audioArtwork: UIImage?
 
         for metadataFormat in fileAsset.availableMetadataFormats {
             let metadataList = fileAsset.metadata(forFormat: metadataFormat)
-            for metadataItem in metadataList
-            {
+            for metadataItem in metadataList {
                 if metadataItem.commonKey == nil {
                     continue
                 }
@@ -67,11 +64,13 @@ public class AudioFile
                         audioArtwork = audioImage
                         print(audioImage.description)
                     }
+
                 case "title"?:
                     // It's working
                     if let value = metadataItem.value as? String {
                         title = value
                     }
+
                 default:
                     title = "Song"
                 }
