@@ -351,6 +351,7 @@ public class ColiseuPlayer: NSObject {
     // MARK: - Observers
 
     private func addInterruptionObserver() {
+        removeInterruptionObserver()
         NotificationCenter.default.addObserver(self, selector: #selector(self.handleInterruption), name: AVAudioSession.interruptionNotification, object: AVAudioSession.sharedInstance())
     }
 
